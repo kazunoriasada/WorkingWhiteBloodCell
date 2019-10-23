@@ -1,84 +1,151 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-[RequireComponent(typeof(Rigidbody))]
-public class Player : MonoBehaviour
+public class Player : Mob
 {
-    //物理剛体
-    private Rigidbody physics = null;
-    //発射方向
-    [SerializeField]
-    private LineRenderer direction = null;
-    //最大付与力量
-    private const float MaxMagnitude = 2f;
-    //発射方向の力
-    private Vector3 currentForce = Vector3.zero;
-    //メインカメラ
-    private Camera mainCamera = null;
-    //メインカメラ座標
-    private Transform mainCameraTransform = null;
-    //ドラッグ開始点
-    private Vector3 dragStart = Vector3.zero;
-    
+    public Action onDestroyed;
 
-    public void Awake()
-    {
-        this.physics = this.GetComponent<Rigidbody>();
-        this.mainCamera = Camera.main;
-        this.mainCameraTransform = this.mainCamera.transform;
-    }
-    //マウス座標をワールド座標に変換して取得
-    private Vector3 GetMousePosition()
-    {
-        // マウスから取得できないZ座標を補完する
-        //なぜ、varをVector3へ変更したのか？をきく
-        Vector3 position = Input.mousePosition;
-        position.z = this.mainCameraTransform.position.z;
-        position = this.mainCamera.ScreenToWorldPoint(position);
-        position.z = 0;
-        return position;
-    }
-    
-    //ドラック開始イベントハンドラ
-    public void OnMouseDown()
-    {
-        this.dragStart = this.GetMousePosition();
+    // [SerializeField] Laser laserPrefab;
 
-        this.direction.enabled = true;
-        this.direction.SetPosition(0, this.physics.position);
-        this.direction.SetPosition(1, this.physics.position);
-    }
+    Vector2 startPosition;
+    bool isLaserSkillActive;
+    Image image;
 
-    //ドラッグ中イベントハンドラ
-    public void OnMouseDrag()
+    public override bool IsMovable
     {
-        var position      = this.GetMousePosition();
-        this.currentForce = position - this.dragStart;
-
-        if (this.currentForce.magnitude > MaxMagnitude * MaxMagnitude)
+        set
         {
-            this.currentForce *= MaxMagnitude / this.currentForce.magnitude;
+            base.IsMovable = value;
+            if (null != image)
+            {
+                image.color = value ? Color.white : Color.black;
+            }
+        }
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        image = GetComponent<Image>();
+
+        var eventTrigger = GetComponent<EventTrigger>();
+        var beginDragEntry = new EventTrigger.Entry();
+        beginDragEntry.eventID = EventTriggerType.PointerDown;
+        beginDragEntry.callback.AddListener(data =>
+        {
+            OnBeginDrag((PointerEventData)data);
+        });
+        eventTrigger.triggers.Add(beginDragEntry);
+
+        var dragEntry = new EventTrigger.Entry();
+        dragEntry.eventID = EventTriggerType.Drag;
+        dragEntry.callback.AddListener(data =>
+        {
+            OnDrag((PointerEventData)data);
+        });
+        eventTrigger.triggers.Add(dragEntry);
+
+        var endDragEntry = new EventTrigger.Entry();
+        endDragEntry.eventID = EventTriggerType.EndDrag;
+        endDragEntry.callback.AddListener(data =>
+        {
+            OnEndDrag((PointerEventData)data);
+        });
+        eventTrigger.triggers.Add(endDragEntry);
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+        Debug.Log(speedKeepCount);
+    }
+
+    void OnDestroy()
+    {
+        if (null != onDestroyed)
+        {
+            onDestroyed();
+        }
+    }
+
+    void OnBeginDrag(PointerEventData data)
+    {
+        if (!isMovable || isMoving)
+        {
+            return;
         }
 
-        this.direction.SetPosition(0, this.physics.position);
-        //Vector3かVector2かオペランドがあいまいというエラーの解消のためコメントアウト
-        this.direction.SetPosition(1, this.physics.position + (Vector3) this.currentForce /* + this.currentForce*/);
+        Debug.Log("begin drag");
+        Debug.Log(data.position);
+        startPosition = data.position;
     }
 
-    //ドラッグ終了イベントハンドラ
-    public void OnMouseUp()
+    void OnDrag(PointerEventData data)
     {
-        this.direction.enabled = false;
-        this.Flip(this.currentForce * 6f);
-    }
-    
-    public void Flip(Vector3 force)
-    {
-        // 瞬間的に力を加えてはじく
-        //AddForce = 第二引数にForceMode.Impulseを入れることで瞬間的に力を加えたかのような挙動を作ることができる
-        //https://www.sejuku.net/blog/54896
-        this.physics.AddForce(force, ForceMode.Impulse);
+        if (!isMovable || isMoving)
+        {
+            return;
+        }
+
+        var diff = data.position - startPosition;
+        Debug.Log(diff);
     }
 
+    void OnEndDrag(PointerEventData data)
+    {
+        if (!isMovable || isMoving)
+        {
+            return;
+        }
+
+        var diff = data.position - startPosition;
+        Debug.Log("go!!");
+        var magnitudeLimit = 50f;
+        Debug.Log(diff.magnitude);
+        var magnitudeLimitRatio = magnitudeLimit / Mathf.Max(diff.magnitude, magnitudeLimit);
+        var speedBonus = speedKeepCount > 0 ? 2f : 1f;
+        Move(-diff * magnitudeLimitRatio * speed * speedBonus);
+    }
+
+    protected override void OnMoveFinished()
+    {
+        base.OnMoveFinished();
+        speedKeepCount = 0;
+        isLaserSkillActive = false;
+    }
+
+    protected override void OnCollisionEnter2D(Collision2D collision)
+    {
+        base.OnCollisionEnter2D(collision);
+
+        if (isLaserSkillActive && collision.gameObject.tag == "Enemy")
+        {
+            FireLaser();
+        }
+    }
+
+    public void InvokeSpeedKeepSkill()
+    {
+        speedKeepCount = 5;
+        isLaserSkillActive = false;
+        Debug.Log("iteru");
+    }
+
+    public void InvokeLaserSkill()
+    {
+        speedKeepCount = 0;
+        isLaserSkillActive = true;
+        Debug.Log("hogehoge");
+    }
+
+    void FireLaser()
+    {
+        // var laser = Instantiate(laserPrefab, transform.position, Quaternion.identity);
+        // laser.transform.SetParent(transform.parent);
+        // laser.StartAnimate(power);
+    }
 }

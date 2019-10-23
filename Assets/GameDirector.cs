@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI ;
 
 public class GameDirector : MonoBehaviour
 {
@@ -31,20 +32,20 @@ public class GameDirector : MonoBehaviour
             //var = 長い型名の代わりに var を使うとコードをスッキリする
             //var = 右辺から型が明らかでない場合、var は推奨されない
             var go = Instantiate(Enemy);
-            go.GetComponent<Enemy>().SetGameManagement(this);
-            if(go == null)
-            {
-                 Debug.Log("生成できていない");
+            go.GetComponent<Enemy>().SetGameDirector(this);
+            //if(go == null)
+            //{
+            //     Debug.Log("生成できていない");
 
-            }
-            else if(go.GetComponent<Enemy>() == null)
-            {
-                Debug.Log("EnemyがAddされていない");
-            }
+            //}
+            //else if(go.GetComponent<Enemy>() == null)
+            //{
+              //  Debug.Log("EnemyがAddされていない");
+            //}
 
             //random
-            int positionX = random.Next(-150, 150);
-            int positionY = random.Next(-150, 150);
+            int positionX = random.Next(-100, 100);
+            int positionY = random.Next(0, 150);
             
             go.GetComponent<Transform>().position = new Vector3(
                 positionX,positionY,
