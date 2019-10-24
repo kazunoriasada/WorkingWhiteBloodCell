@@ -11,11 +11,15 @@ public class MovableBall : MonoBehaviour {
     float speed = 3.5f;
 
     Rigidbody2D rigidBodyCache;
+    //発射方向
+    [SerializeField]
+    private LineRenderer direction = null;
 
     void Start ()
     {
         rigidBodyCache = GetComponent<Rigidbody2D>();
         rigidBodyCache.constraints = true ? RigidbodyConstraints2D.FreezeRotation : RigidbodyConstraints2D.FreezeAll;
+        
     }
 
     void FixedUpdate ()
@@ -101,11 +105,14 @@ public class MovableBall : MonoBehaviour {
         var magnitudeLimit = 50f;
         var magnitudeLimitRatio = magnitudeLimit / Mathf.Max(diff.magnitude, magnitudeLimit);
 
-        Debug.Log("rigidBodyCache.velocity: " + rigidBodyCache.velocity);
+
+        //Debug.Log("rigidBodyCache.velocity: " + rigidBodyCache.velocity);
         rigidBodyCache.velocity = (-diff * magnitudeLimitRatio * speed);
-        Debug.Log("rigidBodyCache.velocity: " + rigidBodyCache.velocity);
+        rigidBodyCache.velocity *= 0.98f;
+        //Debug.Log("rigidBodyCache.velocity: " + rigidBodyCache.velocity);
         // transform.position = moveTo;
     }
+    
     void Update()
     {
         if(transform.position.y < -20)
