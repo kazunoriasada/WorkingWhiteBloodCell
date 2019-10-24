@@ -8,11 +8,23 @@ public class GameDirector : MonoBehaviour
     //SerializeField = privateフィールドをインスペクタに表示する際に付けるおまじない
     [SerializeField]
     private GameObject Enemy;
-    private List<GameObject> enemyList;
-
-    private const int MAX_COUNT = 30;
-    private int count;
     
+    private List<GameObject> enemyList;
+     
+     [SerializeField]
+    Text killText;
+    [SerializeField]
+    Text countText;
+    //[SerializeField]
+    //Image timeUp;
+
+    private const int KILL_VALUE = 10;
+    public int point;
+
+    private const int MAX_COUNT = 150;
+    private int count;
+    private int frame;
+
     //bool = 変数の型名 trueまたはfalse
     private bool gamePlay;
 
@@ -54,12 +66,43 @@ public class GameDirector : MonoBehaviour
 
             enemyList.Add(go);
         }
+        count = MAX_COUNT;
+        frame = 0;
+        gamePlay = true;
+
+        SetKillText();
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        SetKillText();
+        /* frame++;
+        if(frame >= 60)
+        {
+            count--;
+            frame = 0;
+
+            //SetKillText();
+            //SetCountText();
+        }
+        */
+    }
+    
+    
+    private void SetKillText()
+    {
+        if(gamePlay == false) return;
+        this.killText.text = point.ToString();
+        Debug.Log("SetKillText");
+    }
+    public void GetPoint()
+    {
+        if(gamePlay == false) return;
+        this.point += KILL_VALUE;
+        Debug.Log("KILL_VALUEED");
     }
 }
+
+
