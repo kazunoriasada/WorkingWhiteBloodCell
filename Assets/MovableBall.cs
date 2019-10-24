@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MovableBall : MonoBehaviour {
 
@@ -104,6 +105,25 @@ public class MovableBall : MonoBehaviour {
         rigidBodyCache.velocity = (-diff * magnitudeLimitRatio * speed);
         Debug.Log("rigidBodyCache.velocity: " + rigidBodyCache.velocity);
         // transform.position = moveTo;
+    }
+    void Update()
+    {
+        if(transform.position.y < -20)
+        {
+            SceneManager.LoadScene("GameScene");
+        }
+        if(transform.position.y > 350)
+        {
+            SceneManager.LoadScene("GameScene");
+        }
+        if(transform.position.x < -170)
+        {
+            SceneManager.LoadScene("GameScene");
+        }
+         if(transform.position.x > 180)
+        {
+            SceneManager.LoadScene("GameScene");
+        }
     }
 
 }
